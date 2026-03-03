@@ -73,10 +73,10 @@ export default function OnboardingPage() {
         crossOrigin="anonymous"
         src="https://connect.facebook.net/en_US/sdk.js"
       />
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 text-white selection:bg-green-500/30">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-foreground selection:bg-primary/30">
         <div className="w-full max-w-sm flex flex-col items-center text-center space-y-8 animate-in fade-in zoom-in-95 duration-500">
           {/* Storrs Icon */}
-          <div className="w-16 h-16 bg-zinc-900 border border-zinc-800 rounded-2xl flex items-center justify-center mb-2 shadow-2xl">
+          <div className="w-16 h-16 bg-card border border-border rounded-2xl flex items-center justify-center mb-2 shadow-2xl">
             <svg
               className="w-8 h-8 text-green-500"
               fill="none"
@@ -96,15 +96,15 @@ export default function OnboardingPage() {
             <h1 className="text-2xl font-semibold tracking-tight">
               Connect with Facebook
             </h1>
-            <p className="text-zinc-400 text-sm leading-relaxed">
+            <p className="text-muted-foreground text-sm leading-relaxed">
               Link your Facebook Business account to set up your WhatsApp
               Business integration with Storrs.
             </p>
           </div>
 
-          <div className="w-full bg-zinc-900/50 border border-zinc-800/50 rounded-xl p-4 text-left">
+          <div className="w-full bg-secondary/50 border border-border rounded-xl p-4 text-left">
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-yellow-500/10 rounded-lg shrink-0 mt-0.5">
+              <div className="p-2 bg-yellow-500/10 dark:bg-yellow-500/20 rounded-lg shrink-0 mt-0.5">
                 <svg
                   className="w-4 h-4 text-yellow-500"
                   fill="none"
@@ -120,10 +120,12 @@ export default function OnboardingPage() {
                 </svg>
               </div>
               <div>
-                <h3 className="text-sm font-medium text-zinc-200">Important</h3>
-                <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+                <h3 className="text-sm font-medium text-foreground">
+                  Important
+                </h3>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                   During the onboarding flow, please ensure you{" "}
-                  <strong className="text-zinc-300 font-medium">
+                  <strong className="text-foreground font-medium">
                     grant all requested permissions
                   </strong>
                   . Missing permissions will prevent your business from

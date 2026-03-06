@@ -48,6 +48,12 @@ export function Navbar() {
           >
             How it works
           </a>
+          <Link
+            href="/onboarding-prerequisites"
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Guide
+          </Link>
           <a
             href="https://wa.me/2349013535205"
             target="_blank"
@@ -93,6 +99,13 @@ export function Navbar() {
             >
               How it works
             </a>
+            <Link
+              href="/onboarding-prerequisites"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2"
+            >
+              Guide
+            </Link>
             <a
               href="https://wa.me/2349013535205"
               target="_blank"

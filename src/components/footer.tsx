@@ -4,7 +4,7 @@ export function Footer() {
   return (
     <footer className="border-t bg-muted/30">
       <div className="max-w-6xl mx-auto px-6 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
           {/* Brand */}
           <div className="space-y-4">
             <Link href="/" className="flex items-center gap-2">
@@ -38,6 +38,21 @@ export function Footer() {
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 Terms of Service
+              </Link>
+            </div>
+          </div>
+
+          {/* Resources */}
+          <div className="space-y-4">
+            <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Resources
+            </h4>
+            <div className="flex flex-col gap-3">
+              <Link
+                href="/onboarding-prerequisites"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Prerequisites Guide
               </Link>
             </div>
           </div>

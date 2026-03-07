@@ -2,11 +2,15 @@
 
 import Script from "next/script";
 import { useEffect } from "react";
+import * as Sentry from "@sentry/nextjs";
 
 declare global {
   interface Window {
     fbAsyncInit: () => void;
     FB: any;
+    StorrsApp?: {
+      postMessage: (message: string) => void;
+    };
   }
 }
 
@@ -29,11 +33,21 @@ export default function OnboardingPage() {
         const data = JSON.parse(event.data);
         if (data.type === "WA_EMBEDDED_SIGNUP") {
           console.log("message event: ", data); // remove after testing
-          // your code goes here
+          if (data.event === "CANCEL") {
+            Sentry.captureMessage(
+              "WhatsApp Embedded Signup Cancelled or Error",
+              {
+                extra: { embeddedSignupData: data.data },
+              },
+            );
+          }
+          window.StorrsApp?.postMessage(JSON.stringify(data));
         }
-      } catch {
+      } catch (error) {
         console.log("message event: ", event.data); // remove after testing
-        // your code goes here
+        Sentry.captureException(error, {
+          extra: { rawEventData: event.data },
+        });
       }
     };
 

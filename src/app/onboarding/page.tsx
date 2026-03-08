@@ -64,6 +64,7 @@ export default function OnboardingPage() {
     } else {
       console.log("response: ", response); // remove after testing
       // your code goes here
+      Sentry.captureMessage(response as string);
     }
   };
 

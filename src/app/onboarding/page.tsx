@@ -44,8 +44,7 @@ function OnboardingPageContent() {
                 extra: { embeddedSignupData: data.data },
               },
             );
-          }
-          else{
+          } else {
             try {
               await fetch(
                 process.env.NEXT_PUBLIC_INSERT_META_BUSINESS_INTEGRATION_URL!,
@@ -53,26 +52,26 @@ function OnboardingPageContent() {
                   method: "POST",
                   headers: {
                     "Content-Type": "application/json",
-                    "apikey": process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-                    "Authorization": `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!}`,
+                    apikey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+                    Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!}`,
                   },
                   body: JSON.stringify({
                     ...data,
                     storrs_business_id: storrsBusinessId,
                   }),
-                }
+                },
               );
             } catch (error) {
               Sentry.captureException(error, {
-                extra: { 
+                extra: {
                   message: "Error inserting meta business integration",
                   data,
-                  storrsBusinessId 
+                  storrsBusinessId,
                 },
               });
             }
           }
-          window.StorrsApp?.postMessage(JSON.stringify(data.event));
+          window.StorrsApp?.postMessage(JSON.stringify(data));
         }
       } catch (error) {
         console.log("message event: ", event.data); // remove after testing
@@ -87,15 +86,57 @@ function OnboardingPageContent() {
   }, [storrsBusinessId]);
 
   // Response callback
-  const fbLoginCallback = (response: any) => {
+  const fbLoginCallback = async (response: any) => {
     if (response.authResponse) {
       const code = response.authResponse.code;
-      console.log("response: ", code); // remove after testing
-      // your code goes here
+      console.log("Response code received: ", code);
+
+      try {
+        const fetchResponse = await fetch(
+          process.env.NEXT_PUBLIC_RETRIEVE_META_BUSINESS_TOKEN_URL!,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              apikey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+              Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!}`,
+            },
+            body: JSON.stringify({
+              code,
+              storrs_business_id: storrsBusinessId,
+            }),
+          },
+        );
+
+        if (!fetchResponse.ok) {
+          const errorData = await fetchResponse.json();
+          throw new Error(
+            errorData.error || "Failed to retrieve meta business token",
+          );
+        }
+
+        const data = await fetchResponse.json();
+        console.log("Token storage success: ", data);
+        // window.StorrsApp?.postMessage(
+        //   JSON.stringify({ event: "SUCCESS", type: "OAUTH_TOKEN_RETRIEVAL" }),
+        // );
+      } catch (error) {
+        console.error("Error retrieving meta business token: ", error);
+        Sentry.captureException(error, {
+          extra: {
+            message: "Error retrieving meta business token",
+            code,
+            storrsBusinessId,
+          },
+        });
+        // window.StorrsApp?.postMessage(JSON.stringify({ event: "ERROR", type: "OAUTH_TOKEN_RETRIEVAL" }));
+      }
     } else {
-      console.log("response: ", response); // remove after testing
-      // your code goes here
-      Sentry.captureMessage(response as string);
+      console.log("FB Login response: ", response);
+      Sentry.captureMessage(
+        "Facebook Login Failed: " + JSON.stringify(response),
+      );
+      // window.StorrsApp?.postMessage(JSON.stringify({ event: "ERROR", type: "FB_LOGIN" }));
     }
   };
 

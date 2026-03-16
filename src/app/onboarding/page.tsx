@@ -1,8 +1,9 @@
 "use client";
 
 import Script from "next/script";
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import * as Sentry from "@sentry/nextjs";
+import { useSearchParams } from "next/navigation";
 
 declare global {
   interface Window {
@@ -14,7 +15,10 @@ declare global {
   }
 }
 
-export default function OnboardingPage() {
+function OnboardingPageContent() {
+  const searchParams = useSearchParams();
+  const storrsBusinessId = searchParams.get("storrs_business_id");
+
   useEffect(() => {
     window.fbAsyncInit = function () {
       // SDK initialization
@@ -27,7 +31,7 @@ export default function OnboardingPage() {
     };
 
     // Session logging message event listener
-    const handleMessage = (event: MessageEvent) => {
+    const handleMessage = async (event: MessageEvent) => {
       if (!event.origin.endsWith("facebook.com")) return;
       try {
         const data = JSON.parse(event.data);
@@ -41,7 +45,34 @@ export default function OnboardingPage() {
               },
             );
           }
-          window.StorrsApp?.postMessage(JSON.stringify(data));
+          else{
+            try {
+              await fetch(
+                process.env.NEXT_PUBLIC_INSERT_META_BUSINESS_INTEGRATION_URL!,
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    "apikey": process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+                    "Authorization": `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!}`,
+                  },
+                  body: JSON.stringify({
+                    ...data,
+                    storrs_business_id: storrsBusinessId,
+                  }),
+                }
+              );
+            } catch (error) {
+              Sentry.captureException(error, {
+                extra: { 
+                  message: "Error inserting meta business integration",
+                  data,
+                  storrsBusinessId 
+                },
+              });
+            }
+          }
+          window.StorrsApp?.postMessage(JSON.stringify(data.event));
         }
       } catch (error) {
         console.log("message event: ", event.data); // remove after testing
@@ -53,7 +84,7 @@ export default function OnboardingPage() {
 
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, []);
+  }, [storrsBusinessId]);
 
   // Response callback
   const fbLoginCallback = (response: any) => {
@@ -162,6 +193,29 @@ export default function OnboardingPage() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-foreground selection:bg-primary/30">
+          <div className="w-full max-w-sm flex flex-col items-center text-center space-y-8 animate-in fade-in zoom-in-95 duration-500">
+            <div className="w-16 h-16 bg-card border border-border rounded-2xl flex items-center justify-center mb-2 shadow-2xl">
+              <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+            </div>
+            <div className="space-y-3">
+              <h1 className="text-2xl font-semibold tracking-tight">
+                Loading...
+              </h1>
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <OnboardingPageContent />
+    </Suspense>
   );
 }
 

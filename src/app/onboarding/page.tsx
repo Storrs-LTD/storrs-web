@@ -61,6 +61,7 @@ function OnboardingPageContent() {
                   }),
                 },
               );
+              window.StorrsApp?.postMessage(JSON.stringify(data));
             } catch (error) {
               Sentry.captureException(error, {
                 extra: {
@@ -71,7 +72,6 @@ function OnboardingPageContent() {
               });
             }
           }
-          window.StorrsApp?.postMessage(JSON.stringify(data));
         }
       } catch (error) {
         console.log("message event: ", event.data); // remove after testing

@@ -263,30 +263,39 @@ export default function OnboardingPrerequisitesPage() {
                 </strong>{" "}
                 Meta uses this to bill for conversation-based charges.
               </p>
-              <ul className="space-y-2 list-disc pl-5">
+              <ul className="space-y-4 list-disc pl-5">
                 <li>
-                  Navigate to <strong>Billing & Payments</strong> in your
-                  Business Manager.
+                  Access the{" "}
+                  <strong>
+                    WhatsApp Manager &gt; Overview panel
+                  </strong>{" "}
+                  at{" "}
+                  <a
+                    href="https://business.facebook.com/wa/manage/home/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline break-all"
+                  >
+                    business.facebook.com/wa/manage/home/
+                  </a>
+                </li>
+                <li>
+                  Click the <strong>Add payment method</strong> button and follow the prompts to complete the setup.
                 </li>
                 <li>
                   Ensure you are in the correct{" "}
-                  <strong>WhatsApp Business Account</strong> context.
+                  <strong>WhatsApp Business Account</strong> context when adding the method.
                 </li>
                 <li>
-                  Click <strong>Add Payment Method</strong> and enter your card
-                  details.
+                  Verify your payment method has <strong>international transactions</strong> enabled.
                 </li>
                 <li>
-                  Ensure your card has international transactions enabled.
-                </li>
-                <li>
-                  Set this card as your <strong>Default</strong> payment method
-                  for messaging.
+                  Set the card as your <strong>Default</strong> payment method for messaging to avoid service interruptions.
                 </li>
               </ul>
               <div className="pt-4">
                 <Link
-                  href="https://www.facebook.com/business/help/2225184664363779"
+                  href="https://www.facebook.com/business/help/488291839463771"
                   target="_blank"
                   className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:gap-3 transition-all underline decoration-primary/30 underline-offset-4"
                 >

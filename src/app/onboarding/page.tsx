@@ -20,6 +20,7 @@ function OnboardingPageContent() {
   const storrsBusinessId = searchParams.get("storrs_business_id");
 
   useEffect(() => {
+    window.StorrsApp?.postMessage(JSON.stringify({ hello: "hi" })); // testing
     window.fbAsyncInit = function () {
       // SDK initialization
       window.FB.init({

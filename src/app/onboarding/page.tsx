@@ -130,7 +130,7 @@ function OnboardingPageContent() {
 
       try {
         const fetchResponse = await fetch(
-          process.env.NEXT_PUBLIC_OBTAIN_META_BUSINESS_TOKEN_URL!,
+          process.env.NEXT_PUBLIC_INTEGRATE_META_BUSINESS_URL!,
           {
             method: "POST",
             headers: {
@@ -183,11 +183,9 @@ function OnboardingPageContent() {
                 const progressKeys = Object.values(
                   MetaBusinessIntegrationProgress,
                 );
-                
+
                 const isProgressEvent = Object.keys(data).some((key) =>
-                  progressKeys.includes(
-                    key as MetaBusinessIntegrationProgress,
-                  ),
+                  progressKeys.includes(key as MetaBusinessIntegrationProgress),
                 );
 
                 if (isProgressEvent) {

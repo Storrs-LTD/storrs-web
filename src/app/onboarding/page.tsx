@@ -15,7 +15,7 @@ declare global {
   }
 }
 
-enum MetaBusinessIntegrationProgress {
+enum MetaBusinessIntegrationStep {
   validatingIntegration = "validating_integration",
   creatingIntegration = "creating_integration",
   connectingToMeta = "connecting_to_meta",
@@ -60,13 +60,13 @@ function OnboardingPageContent() {
               },
             );
             updateProgress({
-              [MetaBusinessIntegrationProgress.validatingIntegration]: false,
+              [MetaBusinessIntegrationStep.validatingIntegration]: false,
             });
           } else {
             if (data.event === "FINISH") {
               try {
                 updateProgress({
-                  [MetaBusinessIntegrationProgress.validatingIntegration]: true,
+                  [MetaBusinessIntegrationStep.validatingIntegration]: true,
                 });
                 const response = await fetch(
                   process.env.NEXT_PUBLIC_INSERT_META_BUSINESS_INTEGRATION_URL!,
@@ -85,11 +85,11 @@ function OnboardingPageContent() {
                 );
                 if (response.ok) {
                   updateProgress({
-                    [MetaBusinessIntegrationProgress.creatingIntegration]: true,
+                    [MetaBusinessIntegrationStep.creatingIntegration]: true,
                   });
                 } else {
                   updateProgress({
-                    [MetaBusinessIntegrationProgress.creatingIntegration]: false,
+                    [MetaBusinessIntegrationStep.creatingIntegration]: false,
                   });
                 }
               } catch (error) {
@@ -101,7 +101,7 @@ function OnboardingPageContent() {
                   },
                 });
                 updateProgress({
-                  [MetaBusinessIntegrationProgress.creatingIntegration]: false,
+                  [MetaBusinessIntegrationStep.creatingIntegration]: false,
                 });
               }
             }
@@ -113,7 +113,7 @@ function OnboardingPageContent() {
           extra: { rawEventData: event.data },
         });
         updateProgress({
-          [MetaBusinessIntegrationProgress.validatingIntegration]: false,
+          [MetaBusinessIntegrationStep.validatingIntegration]: false,
         });
       }
     };
@@ -181,11 +181,11 @@ function OnboardingPageContent() {
                 console.log("SSE data received:", data);
 
                 const progressKeys = Object.values(
-                  MetaBusinessIntegrationProgress,
+                  MetaBusinessIntegrationStep,
                 );
 
                 const isProgressEvent = Object.keys(data).some((key) =>
-                  progressKeys.includes(key as MetaBusinessIntegrationProgress),
+                  progressKeys.includes(key as MetaBusinessIntegrationStep),
                 );
 
                 if (isProgressEvent) {

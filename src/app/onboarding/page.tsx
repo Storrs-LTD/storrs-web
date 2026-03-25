@@ -15,12 +15,26 @@ declare global {
   }
 }
 
+enum MetaBusinessIntegrationProgress {
+  validatingIntegration = "validating_integration",
+  creatingIntegration = "creating_integration",
+  connectingToMeta = "connecting_to_meta",
+  settingUpWhatsAppBusinessAccount = "setting_up_whatsapp_business_account",
+  registeringPhoneNumber = "registering_phone_number",
+  finalizing = "finalizing",
+}
+
 function OnboardingPageContent() {
   const searchParams = useSearchParams();
   const storrsBusinessId = searchParams.get("storrs_business_id");
+  const pin = searchParams.get("pin");
+
+  const updateProgress = (data: Record<string, unknown>) => {
+    window.StorrsApp?.postMessage(JSON.stringify(data));
+  };
 
   useEffect(() => {
-    window.StorrsApp?.postMessage(JSON.stringify({ hello: "hi" })); // testing
+    // window.StorrsApp?.postMessage(JSON.stringify({ hello: "hi" })); // testing
     window.fbAsyncInit = function () {
       // SDK initialization
       window.FB.init({
@@ -45,32 +59,51 @@ function OnboardingPageContent() {
                 extra: { embeddedSignupData: data.data },
               },
             );
+            updateProgress({
+              [MetaBusinessIntegrationProgress.validatingIntegration]: false,
+            });
           } else {
-            try {
-              await fetch(
-                process.env.NEXT_PUBLIC_INSERT_META_BUSINESS_INTEGRATION_URL!,
-                {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                    apikey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-                    Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!}`,
+            if (data.event === "FINISH") {
+              try {
+                updateProgress({
+                  [MetaBusinessIntegrationProgress.validatingIntegration]: true,
+                });
+                const response = await fetch(
+                  process.env.NEXT_PUBLIC_INSERT_META_BUSINESS_INTEGRATION_URL!,
+                  {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      apikey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+                      Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!}`,
+                    },
+                    body: JSON.stringify({
+                      ...data,
+                      storrs_business_id: storrsBusinessId,
+                    }),
                   },
-                  body: JSON.stringify({
-                    ...data,
-                    storrs_business_id: storrsBusinessId,
-                  }),
-                },
-              );
-              window.StorrsApp?.postMessage(JSON.stringify(data));
-            } catch (error) {
-              Sentry.captureException(error, {
-                extra: {
-                  message: "Error inserting meta business integration",
-                  data,
-                  storrsBusinessId,
-                },
-              });
+                );
+                if (response.ok) {
+                  updateProgress({
+                    [MetaBusinessIntegrationProgress.creatingIntegration]: true,
+                  });
+                } else {
+                  updateProgress({
+                    [MetaBusinessIntegrationProgress.creatingIntegration]: false,
+                  });
+                }
+              } catch (error) {
+                Sentry.captureException(error, {
+                  extra: {
+                    message: "Error inserting meta business integration",
+                    data,
+                    storrsBusinessId,
+                  },
+                });
+                updateProgress({
+                  [MetaBusinessIntegrationProgress.creatingIntegration]: false,
+                });
+              }
             }
           }
         }
@@ -78,6 +111,9 @@ function OnboardingPageContent() {
         console.log("message event: ", event.data); // remove after testing
         Sentry.captureException(error, {
           extra: { rawEventData: event.data },
+        });
+        updateProgress({
+          [MetaBusinessIntegrationProgress.validatingIntegration]: false,
         });
       }
     };
@@ -94,7 +130,7 @@ function OnboardingPageContent() {
 
       try {
         const fetchResponse = await fetch(
-          process.env.NEXT_PUBLIC_RETRIEVE_META_BUSINESS_TOKEN_URL!,
+          process.env.NEXT_PUBLIC_OBTAIN_META_BUSINESS_TOKEN_URL!,
           {
             method: "POST",
             headers: {
@@ -105,6 +141,7 @@ function OnboardingPageContent() {
             body: JSON.stringify({
               code,
               storrs_business_id: storrsBusinessId,
+              pin,
             }),
           },
         );
@@ -116,11 +153,54 @@ function OnboardingPageContent() {
           );
         }
 
-        const data = await fetchResponse.json();
-        console.log("Token storage success: ", data);
-        // window.StorrsApp?.postMessage(
-        //   JSON.stringify({ event: "SUCCESS", type: "OAUTH_TOKEN_RETRIEVAL" }),
-        // );
+        if (!fetchResponse.body) {
+          throw new Error("No response body from stream");
+        }
+
+        const reader = fetchResponse.body.getReader();
+        const decoder = new TextDecoder();
+        let done = false;
+
+        while (!done) {
+          const { value, done: readerDone } = await reader.read();
+          done = readerDone;
+
+          if (value) {
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split("\n");
+
+            for (const line of lines) {
+              if (line.startsWith("data: ")) {
+                let data: Record<string, unknown>;
+                try {
+                  data = JSON.parse(line.slice(6));
+                } catch (e) {
+                  continue; // skip partial or invalid JSON
+                }
+
+                console.log("SSE data received:", data);
+
+                const progressKeys = Object.values(
+                  MetaBusinessIntegrationProgress,
+                );
+                
+                const isProgressEvent = Object.keys(data).some((key) =>
+                  progressKeys.includes(
+                    key as MetaBusinessIntegrationProgress,
+                  ),
+                );
+
+                if (isProgressEvent) {
+                  updateProgress(data);
+                }
+
+                if (data.error) {
+                  throw new Error(String(data.error));
+                }
+              }
+            }
+          }
+        }
       } catch (error) {
         console.error("Error retrieving meta business token: ", error);
         Sentry.captureException(error, {
@@ -130,14 +210,12 @@ function OnboardingPageContent() {
             storrsBusinessId,
           },
         });
-        // window.StorrsApp?.postMessage(JSON.stringify({ event: "ERROR", type: "OAUTH_TOKEN_RETRIEVAL" }));
       }
     } else {
       console.log("FB Login response: ", response);
       Sentry.captureMessage(
         "Facebook Login Failed: " + JSON.stringify(response),
       );
-      // window.StorrsApp?.postMessage(JSON.stringify({ event: "ERROR", type: "FB_LOGIN" }));
     }
   };
 

@@ -84,6 +84,61 @@ export default function NewPage() {
 </Card>
 ```
 
+## Supabase Client & Edge Function Invocation
+
+The project uses a Supabase browser client at `src/lib/supabase/client.ts` built with `createBrowserClient` from `@supabase/ssr`.
+
+### Invocation Rules
+
+1. **Always use `supabase.functions.invoke()`** to call Supabase Edge Functions. Do NOT use raw `fetch` with manual `apikey` / `Authorization` headers — the client handles auth automatically.
+2. **Import pattern**:
+
+   ```tsx
+   import { createClient } from "@/lib/supabase/client";
+   const supabase = createClient();
+   ```
+
+3. **Simple JSON calls**:
+
+   ```tsx
+   const { data, error } = await supabase.functions.invoke("my-function", {
+     body: { key: "value" },
+   });
+   ```
+
+4. **SSE / Streaming responses**: When an edge function returns `Content-Type: text/event-stream`, the `data` from `invoke` is a `Response` object. Read the stream via `data.body.getReader()`:
+
+   ```tsx
+   const { data: streamResponse, error } = await supabase.functions.invoke("my-stream-fn", {
+     body: { key: "value" },
+   });
+   if (streamResponse instanceof Response && streamResponse.body) {
+     const reader = streamResponse.body.getReader();
+     // process SSE chunks...
+   }
+   ```
+
+## Third-Party SDK Callback Constraints
+
+### Facebook SDK (`FB.login`)
+
+The Facebook JS SDK validates that the callback passed to `FB.login()` is a plain `function`, **not** an `asyncfunction`. Passing an `async` callback causes:
+
+> **Error: Expression is of type asyncfunction, not function**
+
+**Fix**: Wrap async logic inside a synchronous callback using an IIFE:
+
+```tsx
+const callback = (response: any) => {
+  (async () => {
+    // async logic here...
+  })().catch((error) => {
+    Sentry.captureException(error);
+  });
+};
+window.FB.login(callback, { config_id: "..." });
+```
+
 ## Verification Guidelines
 
 Every new page must undergo a multi-layered verification process to ensure reliability and visual perfection.
@@ -125,3 +180,4 @@ If browser tools are unavailable, use `curl` for a quick DOM check.
 - **Command**: `curl -s http://localhost:3000/[route-name]`
 - **Check**: Pipe to `grep` to verify the presence of critical strings (e.g., `<nav`, `<footer`, `text-gradient`).
 
+<!-- Updated: 2026-03-26 — Added Supabase client usage, edge function invocation patterns (JSON + SSE streaming), and Facebook SDK async callback constraint. -->

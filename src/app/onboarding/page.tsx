@@ -127,7 +127,8 @@ function OnboardingPageContent() {
   }, [storrsBusinessId]);
 
   // Response callback
-  const fbLoginCallback = async (response: any) => {
+  const fbLoginCallback = (response: any) => {
+    (async () => {
     if (response.authResponse) {
       const code = response.authResponse.code;
       console.log("Response code received: ", code);
@@ -217,6 +218,11 @@ function OnboardingPageContent() {
         "Facebook Login Failed: " + JSON.stringify(response),
       );
     }
+    })().catch((error) => {
+      Sentry.captureException(error, {
+        extra: { message: "Unhandled error in fbLoginCallback" },
+      });
+    });
   };
 
   // Launch method and callback registration

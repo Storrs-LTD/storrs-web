@@ -22,6 +22,7 @@ enum MetaBusinessIntegrationStep {
   settingUpWhatsAppBusinessAccount = "setting_up_whatsapp_business_account",
   registeringPhoneNumber = "registering_phone_number",
   finalizing = "finalizing",
+  completed = "completed",
 }
 
 function OnboardingPageContent() {
@@ -49,6 +50,9 @@ function OnboardingPageContent() {
     const handleMessage = async (event: MessageEvent) => {
       if (!event.origin.endsWith("facebook.com")) return;
       try {
+        updateProgress({
+          start: true,
+        });
         const data = JSON.parse(event.data);
         if (data.type === "WA_EMBEDDED_SIGNUP") {
           console.log("message event: ", data); // remove after testing
@@ -66,7 +70,7 @@ function OnboardingPageContent() {
             if (data.event === "FINISH") {
               try {
                 updateProgress({
-                  [MetaBusinessIntegrationStep.validatingIntegration]: true,
+                  [MetaBusinessIntegrationStep.creatingIntegration]: true,
                 });
                 const response = await fetch(
                   process.env.NEXT_PUBLIC_INSERT_META_BUSINESS_INTEGRATION_URL!,
@@ -85,7 +89,7 @@ function OnboardingPageContent() {
                 );
                 if (response.ok) {
                   updateProgress({
-                    [MetaBusinessIntegrationStep.creatingIntegration]: true,
+                    [MetaBusinessIntegrationStep.connectingToMeta]: true,
                   });
                 } else {
                   updateProgress({
@@ -180,9 +184,7 @@ function OnboardingPageContent() {
 
                 console.log("SSE data received:", data);
 
-                const progressKeys = Object.values(
-                  MetaBusinessIntegrationStep,
-                );
+                const progressKeys = Object.values(MetaBusinessIntegrationStep);
 
                 const isProgressEvent = Object.keys(data).some((key) =>
                   progressKeys.includes(key as MetaBusinessIntegrationStep),

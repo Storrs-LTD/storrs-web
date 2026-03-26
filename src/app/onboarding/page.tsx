@@ -4,6 +4,9 @@ import Script from "next/script";
 import { useEffect, Suspense } from "react";
 import * as Sentry from "@sentry/nextjs";
 import { useSearchParams } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+
+const supabase = createClient();
 
 declare global {
   interface Window {
@@ -72,22 +75,16 @@ function OnboardingPageContent() {
                 updateProgress({
                   [MetaBusinessIntegrationStep.creatingIntegration]: true,
                 });
-                const response = await fetch(
-                  process.env.NEXT_PUBLIC_INSERT_META_BUSINESS_INTEGRATION_URL!,
+                const { error: invokeError } = await supabase.functions.invoke(
+                  "insert-meta-business-integration",
                   {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                      apikey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-                      Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!}`,
-                    },
-                    body: JSON.stringify({
+                    body: {
                       ...data,
                       storrs_business_id: storrsBusinessId,
-                    }),
+                    },
                   },
                 );
-                if (response.ok) {
+                if (!invokeError) {
                   updateProgress({
                     [MetaBusinessIntegrationStep.connectingToMeta]: true,
                   });
@@ -129,95 +126,94 @@ function OnboardingPageContent() {
   // Response callback
   const fbLoginCallback = (response: any) => {
     (async () => {
-    if (response.authResponse) {
-      const code = response.authResponse.code;
-      console.log("Response code received: ", code);
+      if (response.authResponse) {
+        const code = response.authResponse.code;
+        console.log("Response code received: ", code);
 
-      try {
-        const fetchResponse = await fetch(
-          process.env.NEXT_PUBLIC_INTEGRATE_META_BUSINESS_URL!,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              apikey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-              Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!}`,
-            },
-            body: JSON.stringify({
-              code,
-              storrs_business_id: storrsBusinessId,
-              pin,
-            }),
-          },
-        );
+        try {
+          const { data: streamResponse, error: invokeError } =
+            await supabase.functions.invoke("integrate-meta-business", {
+              body: {
+                code,
+                storrs_business_id: storrsBusinessId,
+                pin,
+              },
+            });
 
-        if (!fetchResponse.ok) {
-          const errorData = await fetchResponse.json();
-          throw new Error(
-            errorData.error || "Failed to retrieve meta business token",
-          );
-        }
+          if (invokeError) {
+            throw new Error(
+              invokeError.message || "Failed to retrieve meta business token",
+            );
+          }
 
-        if (!fetchResponse.body) {
-          throw new Error("No response body from stream");
-        }
+          // The edge function returns an SSE stream
+          const response =
+            streamResponse instanceof Response
+              ? streamResponse
+              : new Response(streamResponse);
 
-        const reader = fetchResponse.body.getReader();
-        const decoder = new TextDecoder();
-        let done = false;
+          if (!response.body) {
+            throw new Error("No response body from stream");
+          }
 
-        while (!done) {
-          const { value, done: readerDone } = await reader.read();
-          done = readerDone;
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let done = false;
 
-          if (value) {
-            const chunk = decoder.decode(value, { stream: true });
-            const lines = chunk.split("\n");
+          while (!done) {
+            const { value, done: readerDone } = await reader.read();
+            done = readerDone;
 
-            for (const line of lines) {
-              if (line.startsWith("data: ")) {
-                let data: Record<string, unknown>;
-                try {
-                  data = JSON.parse(line.slice(6));
-                } catch (e) {
-                  continue; // skip partial or invalid JSON
-                }
+            if (value) {
+              const chunk = decoder.decode(value, { stream: true });
+              const lines = chunk.split("\n");
 
-                console.log("SSE data received:", data);
+              for (const line of lines) {
+                if (line.startsWith("data: ")) {
+                  let data: Record<string, unknown>;
+                  try {
+                    data = JSON.parse(line.slice(6));
+                  } catch (e) {
+                    continue; // skip partial or invalid JSON
+                  }
 
-                const progressKeys = Object.values(MetaBusinessIntegrationStep);
+                  console.log("SSE data received:", data);
 
-                const isProgressEvent = Object.keys(data).some((key) =>
-                  progressKeys.includes(key as MetaBusinessIntegrationStep),
-                );
+                  const progressKeys = Object.values(
+                    MetaBusinessIntegrationStep,
+                  );
 
-                if (isProgressEvent) {
-                  updateProgress(data);
-                }
+                  const isProgressEvent = Object.keys(data).some((key) =>
+                    progressKeys.includes(key as MetaBusinessIntegrationStep),
+                  );
 
-                if (data.error) {
-                  throw new Error(String(data.error));
+                  if (isProgressEvent) {
+                    updateProgress(data);
+                  }
+
+                  if (data.error) {
+                    throw new Error(String(data.error));
+                  }
                 }
               }
             }
           }
+        } catch (error) {
+          console.error("Error retrieving meta business token: ", error);
+          Sentry.captureException(error, {
+            extra: {
+              message: "Error retrieving meta business token",
+              code,
+              storrsBusinessId,
+            },
+          });
         }
-      } catch (error) {
-        console.error("Error retrieving meta business token: ", error);
-        Sentry.captureException(error, {
-          extra: {
-            message: "Error retrieving meta business token",
-            code,
-            storrsBusinessId,
-          },
-        });
+      } else {
+        console.log("FB Login response: ", response);
+        Sentry.captureMessage(
+          "Facebook Login Failed: " + JSON.stringify(response),
+        );
       }
-    } else {
-      console.log("FB Login response: ", response);
-      Sentry.captureMessage(
-        "Facebook Login Failed: " + JSON.stringify(response),
-      );
-    }
     })().catch((error) => {
       Sentry.captureException(error, {
         extra: { message: "Unhandled error in fbLoginCallback" },

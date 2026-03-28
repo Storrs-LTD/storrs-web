@@ -54,7 +54,8 @@ export default function NewPage() {
 1. **Accessibility**: Ensure all interactive elements are keyboard-accessible and have proper ARIA labels where necessary.
 2. **Responsive Design**: Always use Tailwind's responsive prefixes (e.g., `md:text-5xl`, `lg:grid-cols-3`) to ensure mobile-first compatibility.
 3. **Clean Code**: Avoid hardcoding colors or spacing that deviate from the Tailwind config or `globals.css` tokens.
-4. **Build Verification**: Always run `npm run build` after creating a new page to verify route generation and TypeScript types.
+4. **No Inline Styles**: Never use the `style={{ }}` prop on JSX elements. Instead, create a utility class in `globals.css` inside `@layer utilities { }` and apply it via `className`. This keeps styles external, reusable, and lint-compliant.
+5. **Build Verification**: Always run `npm run build` after creating a new page to verify route generation and TypeScript types.
 
 ## Examples
 
@@ -238,3 +239,4 @@ If browser tools are unavailable, use `curl` for a quick DOM check.
 
 <!-- Updated: 2026-03-26 — Added Supabase client usage, edge function invocation patterns (JSON + SSE streaming), and Facebook SDK async callback constraint. -->
 <!-- Updated: 2026-03-28 — Added multi-step progress tracking (SSE-to-state mapping, progress card UI, error recovery pattern), and shadow avoidance note for non-(main) pages. -->
+<!-- Updated: 2026-03-28 — Added "No Inline Styles" rule: never use style={{}} props, always create utility classes in globals.css @layer utilities. -->

@@ -78,7 +78,6 @@ function OnboardingPageContent() {
   useEffect(() => {
     if (currentStep === MetaBusinessIntegrationStep.completed) {
       // TODO: redirect to Storrs app via deep link
-      console.log("Integration completed — redirect to app pending");
     }
   }, [currentStep]);
 
@@ -106,7 +105,6 @@ function OnboardingPageContent() {
 
       if (data.type !== "WA_EMBEDDED_SIGNUP") return;
 
-      console.log("message event: ", data); // remove after testing
 
       // Valid embedded signup event — begin tracking
       setCurrentStep(MetaBusinessIntegrationStep.validatingIntegration);
@@ -134,6 +132,13 @@ function OnboardingPageContent() {
           if (!invokeError) {
             setCurrentStep(MetaBusinessIntegrationStep.connectingToMeta);
           } else {
+            Sentry.captureException(invokeError, {
+              extra: {
+                message: "Error invoking insert-meta-business-integration",
+                data,
+                storrsBusinessId,
+              },
+            });
             setFailedStep(MetaBusinessIntegrationStep.creatingIntegration);
           }
         } catch (error) {
@@ -158,7 +163,6 @@ function OnboardingPageContent() {
     (async () => {
       if (response.authResponse) {
         const code = response.authResponse.code;
-        console.log("Response code received: ", code);
 
         try {
           const { data: streamResponse, error: invokeError } =
@@ -242,7 +246,6 @@ function OnboardingPageContent() {
           });
         }
       } else {
-        console.log("FB Login response: ", response);
         Sentry.captureMessage(
           "Facebook Login Failed: " + JSON.stringify(response),
         );

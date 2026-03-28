@@ -92,59 +92,57 @@ function OnboardingPageContent() {
     // Session logging message event listener
     const handleMessage = async (event: MessageEvent) => {
       if (!event.origin.endsWith("facebook.com")) return;
+
+      // Ignore non-JSON messages (Facebook posts many during the flow)
+      let data: any;
       try {
-        // Embedded signup started — begin at first step
-        setCurrentStep(MetaBusinessIntegrationStep.validatingIntegration);
-        setFailedStep(null);
+        data = JSON.parse(event.data);
+      } catch {
+        return;
+      }
 
-        const data = JSON.parse(event.data);
-        if (data.type === "WA_EMBEDDED_SIGNUP") {
-          console.log("message event: ", data); // remove after testing
-          if (data.event === "CANCEL") {
-            Sentry.captureMessage(
-              "WhatsApp Embedded Signup Cancelled or Error",
-              {
-                extra: { embeddedSignupData: data.data },
-              },
-            );
-            setFailedStep(MetaBusinessIntegrationStep.validatingIntegration);
-          } else if (data.event === "FINISH") {
-            try {
-              setCurrentStep(MetaBusinessIntegrationStep.creatingIntegration);
+      if (data.type !== "WA_EMBEDDED_SIGNUP") return;
 
-              const { error: invokeError } = await supabase.functions.invoke(
-                "insert-meta-business-integration",
-                {
-                  body: {
-                    ...data,
-                    storrs_business_id: storrsBusinessId,
-                  },
-                },
-              );
+      console.log("message event: ", data); // remove after testing
 
-              if (!invokeError) {
-                setCurrentStep(MetaBusinessIntegrationStep.connectingToMeta);
-              } else {
-                setFailedStep(MetaBusinessIntegrationStep.creatingIntegration);
-              }
-            } catch (error) {
-              Sentry.captureException(error, {
-                extra: {
-                  message: "Error inserting meta business integration",
-                  data,
-                  storrsBusinessId,
-                },
-              });
-              setFailedStep(MetaBusinessIntegrationStep.creatingIntegration);
-            }
-          }
-        }
-      } catch (error) {
-        console.log("message event: ", event.data); // remove after testing
-        Sentry.captureException(error, {
-          extra: { rawEventData: event.data },
+      // Valid embedded signup event — begin tracking
+      setCurrentStep(MetaBusinessIntegrationStep.validatingIntegration);
+      setFailedStep(null);
+
+      if (data.event === "CANCEL") {
+        Sentry.captureMessage("WhatsApp Embedded Signup Cancelled or Error", {
+          extra: { embeddedSignupData: data.data },
         });
         setFailedStep(MetaBusinessIntegrationStep.validatingIntegration);
+      } else if (data.event === "FINISH") {
+        try {
+          setCurrentStep(MetaBusinessIntegrationStep.creatingIntegration);
+
+          const { error: invokeError } = await supabase.functions.invoke(
+            "insert-meta-business-integration",
+            {
+              body: {
+                ...data,
+                storrs_business_id: storrsBusinessId,
+              },
+            },
+          );
+
+          if (!invokeError) {
+            setCurrentStep(MetaBusinessIntegrationStep.connectingToMeta);
+          } else {
+            setFailedStep(MetaBusinessIntegrationStep.creatingIntegration);
+          }
+        } catch (error) {
+          Sentry.captureException(error, {
+            extra: {
+              message: "Error inserting meta business integration",
+              data,
+              storrsBusinessId,
+            },
+          });
+          setFailedStep(MetaBusinessIntegrationStep.creatingIntegration);
+        }
       }
     };
 
@@ -417,7 +415,6 @@ function ProgressCard({
           const isFailed = failedStep === step.key;
           const isCompleted = !isFailed && stepIndex < currentIndex;
           const isActive = !isFailed && !hasFailed && step.key === currentStep;
-          const isPending = !isFailed && !isCompleted && !isActive;
 
           return (
             <div

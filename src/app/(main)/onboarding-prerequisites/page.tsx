@@ -47,7 +47,7 @@ export default function OnboardingPrerequisitesPage() {
 
         {/* Quick Summary Card */}
         <section className="max-w-4xl mx-auto px-6 mb-20">
-          <Card className="glass-card glow-green animate-fade-in-up animation-delay-400">
+          <Card className="glass-card animate-fade-in-up animation-delay-400">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-xl">
                 <CheckCircle2 className="w-6 h-6 text-primary" />

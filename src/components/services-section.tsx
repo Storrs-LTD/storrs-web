@@ -66,7 +66,7 @@ export function ServicesSection() {
           {services.map((service, i) => (
             <div
               key={i}
-              className="group relative rounded-2xl border bg-card p-8 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1"
+              className="group relative rounded-2xl border bg-card p-8 transition-all duration-300 hover:-translate-y-1"
             >
               {/* Gradient Background on Hover */}
               <div

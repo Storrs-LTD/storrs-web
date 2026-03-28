@@ -52,12 +52,12 @@ export function HowItWorksSection() {
           {steps.map((step, i) => (
             <div key={i} className="relative text-center group">
               {/* Step Number Circle */}
-              <div className="relative mx-auto mb-6 w-32 h-32 rounded-full border-2 border-primary/20 flex items-center justify-center transition-all group-hover:border-primary/50 group-hover:shadow-lg group-hover:shadow-primary/10">
+              <div className="relative mx-auto mb-6 w-32 h-32 rounded-full border-2 border-primary/20 flex items-center justify-center transition-all group-hover:border-primary/50">
                 <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center transition-transform group-hover:scale-110">
                   <step.icon className="w-10 h-10 text-primary" />
                 </div>
                 {/* Step Number Badge */}
-                <div className="absolute -top-2 -right-2 w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold shadow-lg">
+                <div className="absolute -top-2 -right-2 w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
                   {step.number}
                 </div>
               </div>
@@ -77,7 +77,7 @@ export function HowItWorksSection() {
             href="https://wa.me/2349013535205"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-primary text-primary-foreground font-semibold hover:brightness-110 transition-all hover:shadow-xl hover:shadow-primary/25 active:scale-95"
+            className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-primary text-primary-foreground font-semibold hover:brightness-110 transition-all active:scale-95"
           >
             Start growing on WhatsApp
             <span>→</span>

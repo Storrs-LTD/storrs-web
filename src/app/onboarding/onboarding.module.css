@@ -1,0 +1,3 @@
+.stepRow {
+  animation-delay: var(--step-delay, 0ms);
+}

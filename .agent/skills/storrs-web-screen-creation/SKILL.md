@@ -40,7 +40,7 @@ export default function NewPage() {
 - **Premium Look**: Use project-specific utility classes defined in `globals.css`:
   - `text-gradient`: For emphasized headers.
   - `glass-card`: For semi-transparent, modern card backgrounds.
-  - `glow-green`: For subtle green box-shadow effects on cards.
+  - `glow-green`: For subtle green box-shadow effects on cards. **Note**: Avoid shadows on pages outside the `(main)` layout (e.g., standalone onboarding flows). Use clean, flat card styles (`bg-card border border-border rounded-xl`) instead.
 - **Typography**: The project uses **Poppins** as the primary font (configured in the root layout).
 - **Animations**: Use utility classes like `animate-fade-in` and `animate-fade-in-up`.
 
@@ -139,6 +139,62 @@ const callback = (response: any) => {
 window.FB.login(callback, { config_id: "..." });
 ```
 
+## Multi-Step Progress Tracking
+
+When a page orchestrates a multi-step backend flow (e.g., SSE-streamed integration), track progress in local React state rather than forwarding events elsewhere (e.g., `postMessage`).
+
+### State Pattern
+
+```tsx
+const [currentStep, setCurrentStep] = useState<MyStepEnum | null>(null);
+const [failedStep, setFailedStep] = useState<MyStepEnum | null>(null);
+```
+
+- `currentStep === null` → show the initial screen (e.g., signup form / CTA button).
+- `currentStep !== null` → replace the screen with a progress card.
+- `failedStep !== null` → mark the failed step and show an error action.
+
+### SSE-to-State Mapping
+
+When parsing SSE events from an edge function, map each progress key to state:
+
+```tsx
+for (const key of Object.keys(sseData)) {
+  if (progressKeys.includes(key as MyStepEnum)) {
+    const step = key as MyStepEnum;
+    if (sseData[key] === true) {
+      setCurrentStep(step);
+    } else if (sseData[key] === false) {
+      setFailedStep(step);
+    }
+  }
+}
+```
+
+### Progress Card UI
+
+Display steps in a card with four visual states:
+
+| State | Visual |
+| --- | --- |
+| Completed | Green checkmark icon |
+| Active | Spinner animation + highlighted background |
+| Pending | Empty circle, muted text |
+| Failed | X icon, `text-destructive` |
+
+Use existing design tokens: `bg-card`, `border-border`, `text-foreground`, `text-muted-foreground`, `text-destructive`, `bg-secondary/50` for active row highlight.
+
+### Error Recovery
+
+When a step fails, display a **"Try Again"** button that resets all state to `null`, returning the user to the initial screen:
+
+```tsx
+const handleTryAgain = () => {
+  setCurrentStep(null);
+  setFailedStep(null);
+};
+```
+
 ## Verification Guidelines
 
 Every new page must undergo a multi-layered verification process to ensure reliability and visual perfection.
@@ -181,3 +237,4 @@ If browser tools are unavailable, use `curl` for a quick DOM check.
 - **Check**: Pipe to `grep` to verify the presence of critical strings (e.g., `<nav`, `<footer`, `text-gradient`).
 
 <!-- Updated: 2026-03-26 — Added Supabase client usage, edge function invocation patterns (JSON + SSE streaming), and Facebook SDK async callback constraint. -->
+<!-- Updated: 2026-03-28 — Added multi-step progress tracking (SSE-to-state mapping, progress card UI, error recovery pattern), and shadow avoidance note for non-(main) pages. -->

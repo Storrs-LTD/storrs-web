@@ -3,7 +3,7 @@
 import Script from "next/script";
 import { useEffect, useState, Suspense } from "react";
 import * as Sentry from "@sentry/nextjs";
-import { useSearchParams } from "next/navigation";
+import { redirect, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import styles from "./onboarding.module.css";
 
@@ -65,6 +65,9 @@ function OnboardingPageContent() {
   const searchParams = useSearchParams();
   const storrsBusinessId = searchParams.get("storrs_business_id");
   const pin = searchParams.get("pin");
+  if (!(storrsBusinessId && pin)) {
+    redirect("/");
+  }
 
   const [currentStep, setCurrentStep] =
     useState<MetaBusinessIntegrationStep | null>(null);

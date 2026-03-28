@@ -100,3 +100,51 @@ _If you do use supplemental folders, make sure you reference them via absolute p
 - [ ] Is the description written in the third person?
 - [ ] Are the instructions actionable checklists?
 
+---
+
+## 6. Creating Workflow Files
+
+Workflows live at `.agent/workflows/<workflow-name>.md` and are **not** skills — they are executable step sequences for the agent to follow. A `description:` YAML frontmatter field is required; `name:` is not.
+
+### Style rules
+
+- **Numbered imperative steps** — each step says "Do X", not "Consider X". Avoid section headings as a substitute for steps.
+- **Embed specifics inline** — file paths, code signals (e.g., `Deno.env.get("VAR")`), and field names belong inside the relevant step, not in a separate reference table.
+- **No reference-document style** — avoid large standalone tables, checklists-as-sections, or "Drift Detection" tables. Those belong in a `SKILL.md`, not a workflow.
+- **`// turbo` annotation** — place `// turbo` on the line immediately above any step that can be auto-executed without user confirmation (e.g., a verify/read step). This annotation applies only to that single step.
+- **Always end with a report step** — the final step must tell the agent to summarise what changed and report to the user.
+
+### Template
+
+```markdown
+---
+description: <One-line description of what this workflow does>
+---
+
+# <Workflow Title>
+
+<One or two sentences explaining when to run this workflow and what triggers it.>
+
+## Steps
+
+1. **Read X.** Open `path/to/file` and keep it in context.
+
+2. **Scan for Y.** Read the following files and look for Z:
+   - `path/to/file-a` — check for ...
+   - `path/to/file-b` — check for ...
+
+3. **Identify drift.** List only what changed. Do not update sections that have not drifted.
+
+4. **Apply updates.** For each drifted area:
+   - **Case A** → do this.
+   - **Case B** → do that.
+
+// turbo
+5. **Verify.** Re-read the updated file and confirm:
+   - [ ] Assertion 1.
+   - [ ] Assertion 2.
+
+6. **Report to the user.** List what changed. If nothing drifted, state that explicitly.
+```
+
+<!-- Updated: 2026-03-28 — Added section 6: Workflow File authoring style, location, and template -->

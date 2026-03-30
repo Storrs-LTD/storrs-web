@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "ng.com.storrs_business",
+      "sha256_cert_fingerprints": [
+        "A4:C1:16:AF:B1:DD:15:97:BC:E4:4A:72:53:A6:2C:A9:F1:00:6A:32:D8:CF:14:E0:93:C3:DD:15:C7:50:1F:55"
+      ]
+    }
+  }
+]
+

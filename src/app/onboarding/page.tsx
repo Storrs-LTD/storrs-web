@@ -76,8 +76,16 @@ function OnboardingPageContent() {
 
   useEffect(() => {
     if (currentStep === MetaBusinessIntegrationStep.completed) {
-      window.location.href =
-        "http://storrs.com.ng/post-meta-business-integration";
+      // Same-domain redirects can bypass Android App Links.
+      // Use the intent:// fallback pattern to strongly trigger the app.
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      if (isAndroid) {
+        window.location.href =
+          "intent://storrs.com.ng/post-meta-business-integration#Intent;scheme=http;package=ng.com.storrs_business;end";
+      } else {
+        window.location.href =
+          "http://storrs.com.ng/post-meta-business-integration";
+      }
     }
   }, [currentStep]);
 
@@ -510,6 +518,21 @@ function ProgressCard({
           </svg>
           Try Again
         </button>
+      )}
+
+      {currentStep === MetaBusinessIntegrationStep.completed && !hasFailed && (
+        <a
+          href={
+            /Android/i.test(
+              typeof navigator !== "undefined" ? navigator.userAgent : "",
+            )
+              ? "intent://storrs.com.ng/post-meta-business-integration#Intent;scheme=https;package=ng.com.storrs_business;end"
+              : "https://storrs.com.ng/post-meta-business-integration"
+          }
+          className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-200 rounded-xl px-4 py-3 font-medium text-sm active:scale-[0.98] mt-4"
+        >
+          Return to App
+        </a>
       )}
     </div>
   );

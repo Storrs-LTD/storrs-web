@@ -74,10 +74,10 @@ function OnboardingPageContent() {
   const [failedStep, setFailedStep] =
     useState<MetaBusinessIntegrationStep | null>(null);
 
-  // TODO: Implement deep link redirect to Storrs app when step === completed
   useEffect(() => {
     if (currentStep === MetaBusinessIntegrationStep.completed) {
-      // TODO: redirect to Storrs app via deep link
+      window.location.href =
+        "https://storrs.com.ng/post-meta-business-integration";
     }
   }, [currentStep]);
 
@@ -104,7 +104,6 @@ function OnboardingPageContent() {
       }
 
       if (data.type !== "WA_EMBEDDED_SIGNUP") return;
-
 
       // Valid embedded signup event — begin tracking
       setCurrentStep(MetaBusinessIntegrationStep.validatingIntegration);

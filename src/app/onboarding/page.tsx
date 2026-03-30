@@ -77,7 +77,7 @@ function OnboardingPageContent() {
   useEffect(() => {
     if (currentStep === MetaBusinessIntegrationStep.completed) {
       window.location.href =
-        "https://storrs.com.ng/post-meta-business-integration";
+        "http://storrs.com.ng/post-meta-business-integration";
     }
   }, [currentStep]);
 
